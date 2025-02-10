@@ -71,7 +71,6 @@ public class Types {
 						return "hologram";
 					}
 
-					@Override
 					public String getVariableNamePattern() {
 						return "\\S+";
 					}
@@ -164,7 +163,6 @@ public class Types {
 						return "hologram line";
 					}
 
-					@Override
 					public String getVariableNamePattern() {
 						return "\\S+";
 					}
@@ -172,7 +170,7 @@ public class Types {
 
 		Converters.registerConverter(HologramLine.class, String.class, (Converter<HologramLine, String>) line -> line.getType() == HologramLineType.TEXT ? line.getText() : null);
 		Converters.registerConverter(HologramLine.class, ItemType.class, (Converter<HologramLine, ItemType>) line -> line.getType() == HologramLineType.ICON
-				? new ItemType(line.getItem().getMaterial().getId()) : null);
+				? new ItemType(line.getItem().getMaterial()) : null);
 
 	}
 

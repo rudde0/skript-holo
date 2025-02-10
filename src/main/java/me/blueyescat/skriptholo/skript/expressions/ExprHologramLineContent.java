@@ -87,7 +87,7 @@ public class ExprHologramLineContent<T> extends SimpleExpression<T> {
 					contents.add(line.getText());
 			} else if (line.getType() == HologramLineType.ICON) {
 				if (type == 0 || type == 2)
-					contents.add(new ItemType(line.getItem().getMaterial().getId()));
+					contents.add(new ItemType(line.getItem().getMaterial()));
 			}
 		}
 		try {
