@@ -5,14 +5,13 @@ plugins {
 }
 
 group 'me.blueyescat.skriptholo'
-version '1.0.5-dh'
+version '1.0.6-dh'
 
 sourceCompatibility = JavaVersion.VERSION_21
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 
 repositories {
-	jcenter()
 	mavenCentral()
 	maven { url 'https://jitpack.io' }
 	maven { url 'https://repo.skriptlang.org/releases' }
@@ -25,10 +24,10 @@ repositories {
 }
 
 dependencies {
-	implementation 'io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT'
-	implementation 'com.github.SkriptLang:Skript:2.10.1'
-	compileOnly 'com.github.DecentSoftware-eu:DecentHolograms:2.8.12'
-	implementation 'com.comphenix.protocol:ProtocolLib:5.1.0'
+    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    compileOnly 'com.github.SkriptLang:Skript:2.12.2'
+	compileOnly 'com.github.DecentSoftware-eu:DecentHolograms:2.9.7'
+    compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
 }
 
 processResources {

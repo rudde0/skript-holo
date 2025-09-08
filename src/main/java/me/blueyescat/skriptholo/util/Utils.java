@@ -74,20 +74,17 @@ public class Utils {
 		Map<Hologram, Direction[]> holoMap = SkriptHolo.followingHolograms.get(entityID);
 		if (holoMap == null || holoMap.isEmpty())
 			return;
-		for (Object o : holoMap.entrySet()) {
-			Map.Entry entry = (Map.Entry) o;
-			Hologram holo = (Hologram) entry.getKey();
+		for (Map.Entry<Hologram, Direction[]> o : holoMap.entrySet()) {
+            Hologram holo = o.getKey();
 			Utils.deleteHologram(entityID, holo);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public static void cleanFollowingHolograms() {
-		for (Object o : SkriptHolo.followingHologramsEntities.entrySet()) {
-			Map.Entry entry = (Map.Entry) o;
-			Entity entity = (Entity) entry.getKey();
+		for (Map.Entry<Entity, List<Hologram>> o : SkriptHolo.followingHologramsEntities.entrySet()) {
+            Entity entity = o.getKey();
 			if (!entity.isValid()) {
-				for (Hologram holo : (List<Hologram>) entry.getValue()) {
+				for (Hologram holo : o.getValue()) {
 					if (!holo.isDisabled())
 						holo.delete();
 					if (holo.equals(EffCreateHologram.lastCreated))
@@ -129,30 +126,29 @@ public class Utils {
 			holo.setLocation(offset != null ? offsetLocation(location, offset) : location);
 	}
 
-	@SuppressWarnings("unchecked")
 	public static void makeHologramStopFollowing(Hologram holo) {
-		Iterator it;
-		it = SkriptHolo.followingHolograms.entrySet().iterator();
+		Iterator<Map.Entry<Integer, Map<Hologram, Direction[]>>> it = SkriptHolo.followingHolograms.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry entry = (Map.Entry) it.next();
-			Map<Hologram, Direction[]> holoMap = (Map<Hologram, Direction[]>) entry.getValue();
-			Iterator it2 = holoMap.entrySet().iterator();
+			Map.Entry<Integer, Map<Hologram, Direction[]>> entry = it.next();
+			Map<Hologram, Direction[]> holoMap = entry.getValue();
+			Iterator<Map.Entry<Hologram, Direction[]>> it2 = holoMap.entrySet().iterator();
 			while (it2.hasNext()) {
-				Hologram holo2 = (Hologram) ((Map.Entry) it2.next()).getKey();
-				if (holo2.equals(holo))
-					it2.remove();
+				Hologram holo2 = it2.next().getKey();
+				if (holo2.equals(holo)) {
+                    it2.remove();
+                }
 			}
+
 			it.remove();
 		}
 
-		it = SkriptHolo.followingHologramsEntities.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry entry = (Map.Entry) it.next();
-			List<Hologram> holoList = (List<Hologram>) entry.getValue();
-			holoList.removeIf(holo2 -> holo2.equals(holo));
-			if (holoList.isEmpty())
-				it.remove();
-		}
+        for (Map.Entry<Entity, List<Hologram>> entry : SkriptHolo.followingHologramsEntities.entrySet()) {
+            List<Hologram> holoList = entry.getValue();
+            holoList.removeIf(holo2 -> holo2.equals(holo));
+            if (holoList.isEmpty()) {
+                it.remove();
+            }
+        }
 		SkriptHolo.followingHologramsList.remove(holo);
 	}
 
