@@ -4,12 +4,13 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptEvent;
 import ch.njol.skript.lang.SkriptParser;
-import ch.njol.skript.registrations.EventValues;
-import ch.njol.skript.util.Getter;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 import eu.decentsoftware.holograms.event.HologramClickEvent;
+import me.blueyescat.skriptholo.SkriptHolo;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.skriptlang.skript.bukkit.lang.eventvalue.EventValue;
+import org.skriptlang.skript.bukkit.lang.eventvalue.EventValueRegistry;
 
 public class EvtHologramLineClick extends SkriptEvent {
 
@@ -22,18 +23,13 @@ public class EvtHologramLineClick extends SkriptEvent {
 						"\tif event-hologram-line is \"test\":")
 				.since("1.0.0");
 
-		EventValues.registerEventValue(HologramClickEvent.class, Player.class, new Getter<Player, HologramClickEvent>() {
-			@Override
-			public Player get(HologramClickEvent e) {
-				return e.getPlayer();
-			}
-		}, 0);
-		EventValues.registerEventValue(HologramClickEvent.class, Hologram.class, new Getter<Hologram, HologramClickEvent>() {
-			@Override
-			public Hologram get(HologramClickEvent e) {
-				return e.getHologram();
-			}
-		}, 0);
+		EventValueRegistry eventValues = SkriptHolo.getAddonInstance().registry(EventValueRegistry.class);
+		eventValues.register(EventValue.builder(HologramClickEvent.class, Player.class)
+			.getter(HologramClickEvent::getPlayer)
+			.build());
+		eventValues.register(EventValue.builder(HologramClickEvent.class, Hologram.class)
+			.getter(HologramClickEvent::getHologram)
+			.build());
 	}
 
 	@Override

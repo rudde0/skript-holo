@@ -38,7 +38,7 @@ public class SkriptHolo extends JavaPlugin implements Listener {
 		}
 
 		try {
-			SkriptAddon addonInstance = Skript.registerAddon(this).setLanguageFileDirectory("lang");
+			addonInstance = Skript.registerAddon(this).setLanguageFileDirectory("lang");
 			addonInstance.loadClasses("me.blueyescat.skriptholo", "skript");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -55,7 +55,7 @@ public class SkriptHolo extends JavaPlugin implements Listener {
 
 	public static SkriptAddon getAddonInstance() {
 		if (addonInstance == null)
-			addonInstance = Skript.registerAddon(getInstance());
+			throw new IllegalStateException("SkriptHolo addon is not registered yet");
 		return addonInstance;
 	}
 

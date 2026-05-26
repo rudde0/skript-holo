@@ -5,9 +5,12 @@ plugins {
 }
 
 group 'me.blueyescat.skriptholo'
-version '1.0.6-dh'
+version '1.0.7-dh'
 
-sourceCompatibility = JavaVersion.VERSION_21
+java {
+	sourceCompatibility = JavaVersion.toVersion(25)
+	targetCompatibility = JavaVersion.toVersion(25)
+}
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
 
@@ -24,10 +27,18 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'com.github.SkriptLang:Skript:2.12.2'
-	compileOnly 'com.github.DecentSoftware-eu:DecentHolograms:2.9.7'
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'com.github.SkriptLang:Skript:2.15.2'
+	compileOnly 'com.github.DecentSoftware-eu:DecentHolograms:2.9.10'
     compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
+	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+}
+
+jar {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from {
+		configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+	}
 }
 
 processResources {
