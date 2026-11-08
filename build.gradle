@@ -4,41 +4,34 @@ plugins {
 	id 'java'
 }
 
-group 'me.blueyescat.skriptholo'
-version '1.0.7-dh'
+group = 'me.blueyescat.skriptholo'
+version = '2.0.0'
 
-java {
-	sourceCompatibility = JavaVersion.toVersion(25)
-	targetCompatibility = JavaVersion.toVersion(25)
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	// Bytecode 21 so the same jar loads on 1.21.x (Java 21) and 26.x (Java 25) servers.
+	options.release = 21
+	options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 }
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
 
 repositories {
 	mavenCentral()
-	maven { url 'https://jitpack.io' }
-	maven { url 'https://repo.skriptlang.org/releases' }
-	maven { url 'https://oss.sonatype.org/content/groups/public' }
-	maven { url 'https://nexus.hc.to/content/repositories/pub_releases' }
-	maven { url 'https://maven.enginehub.org/repo' }
-	maven { url 'https://repo.papermc.io/repository/maven-public/' }
-	maven { url 'https://repo.dmulloy2.net/repository/public/' }
-
+	maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+	maven { url = 'https://repo.skriptlang.org/releases' }
+	maven { url = 'https://jitpack.io' }
+	maven { url = 'https://repo.codemc.io/repository/maven-releases/' }
+	maven { url = 'https://repo.codemc.io/repository/maven-snapshots/' }
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-    compileOnly 'com.github.SkriptLang:Skript:2.15.2'
-	compileOnly 'com.github.DecentSoftware-eu:DecentHolograms:2.9.10'
-    compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
-	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+	compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+	compileOnly 'com.github.SkriptLang:Skript:2.15.2'
+	compileOnly 'com.github.retrooper:packetevents-spigot:2.13.0'
 }
 
+// No runtime dependencies are bundled: the plugin jar only contains its own classes.
 jar {
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-	from {
-		configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-	}
 }
 
 processResources {

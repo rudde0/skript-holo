@@ -1,19 +1,19 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
 import ch.njol.skript.doc.Since;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import eu.decentsoftware.holograms.api.holograms.HologramLine;
+import me.blueyescat.skriptholo.hologram.Hologram;
+import me.blueyescat.skriptholo.hologram.HologramLine;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +24,14 @@ import java.util.List;
 @Since("1.0.0")
 public class ExprHologramLineParent extends SimpleExpression<Hologram> {
 
-	static {
-		Skript.registerExpression(ExprHologramLineParent.class, Hologram.class, ExpressionType.SIMPLE,
-				"[the] [parent[s]] holo[gram][s] of [holo[gram] line[s]] %hologramlines%",
-				"%hologramlines%'[s] [parent[s]] holo[gram][s]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder(ExprHologramLineParent.class, Hologram.class)
+				.priority(SyntaxInfo.SIMPLE)
+				.addPatterns(
+						"[the] [parent[s]] holo[gram][s] of [holo[gram] line[s]] %hologramlines%",
+						"%hologramlines%'[s] [parent[s]] holo[gram][s]")
+				.build());
 	}
 
 	private Expression<HologramLine> lines;
@@ -43,7 +47,7 @@ public class ExprHologramLineParent extends SimpleExpression<Hologram> {
 	protected Hologram[] get(Event e) {
 		List<Hologram> holograms = new ArrayList<>();
 		for (HologramLine line : lines.getArray(e))
-			holograms.add(line.getParent().getParent());
+			holograms.add(line.getParent());
 		return holograms.toArray(new Hologram[0]);
 	}
 

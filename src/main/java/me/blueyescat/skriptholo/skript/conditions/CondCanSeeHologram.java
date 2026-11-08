@@ -1,16 +1,16 @@
 package me.blueyescat.skriptholo.skript.conditions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.*;
 import ch.njol.skript.lang.Condition;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.util.Utils;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Can See Hologram")
 @Description("Checks whether the given players can see the given holograms. " +
@@ -20,15 +20,16 @@ import org.jetbrains.annotations.Nullable;
 		"if hologram {_holo} is not visible for {_player}:",
 		"if the player can see the holo {holograms::1}:"})
 @Since("1.0.0")
-@RequiredPlugins("ProtocolLib")
 public class CondCanSeeHologram extends Condition {
 
-	static {
-		Skript.registerCondition(CondCanSeeHologram.class,
-				"[holo[gram][s]] %holograms% (is|are) (visible|1¦(invisible|hidden)) (for|to|from) %players%",
-				"%players% can see [holo[gram][s]] %holograms%",
-				"[holo[gram][s]] %holograms% (is|are)(n't| not) (visible|1¦(invisible|hidden)) (for|to|from) %players%",
-				"%players% can('t| not) see [holo[gram][s]] %holograms%");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.CONDITION, SyntaxInfo.builder(CondCanSeeHologram.class)
+				.addPatterns(
+						"[holo[gram][s]] %holograms% (is|are) (visible|1¦(invisible|hidden)) (for|to|from) %players%",
+						"%players% can see [holo[gram][s]] %holograms%",
+						"[holo[gram][s]] %holograms% (is|are)(n't| not) (visible|1¦(invisible|hidden)) (for|to|from) %players%",
+						"%players% can('t| not) see [holo[gram][s]] %holograms%")
+				.build());
 	}
 
 	private Expression<Player> players;
@@ -37,10 +38,6 @@ public class CondCanSeeHologram extends Condition {
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed, ParseResult parseResult) {
-		if (!Utils.hasPlugin("ProtocolLib")) {
-			Skript.error("The hologram visibility feature requires ProtocolLib");
-			return false;
-		}
 		if (matchedPattern == 1 || matchedPattern == 3) {
 			players = (Expression<Player>) exprs[0];
 			holograms = (Expression<Hologram>) exprs[1];
@@ -56,7 +53,7 @@ public class CondCanSeeHologram extends Condition {
 	public boolean check(Event e) {
 		return players.check(e, player ->
 				holograms.check(e, holo ->
-						holo.canShow(player)
+						holo.canSee(player)
 				), isNegated());
 	}
 

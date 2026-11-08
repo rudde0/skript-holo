@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.conditions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
@@ -9,9 +8,11 @@ import ch.njol.skript.lang.Condition;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Is Hologram Deleted")
 @Description("Checks whether the given hologram is deleted. " +
@@ -21,10 +22,12 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class CondIsHologramDeleted extends Condition {
 
-	static {
-		Skript.registerCondition(CondIsHologramDeleted.class,
-				"holo[gram][s] %holograms% (is|are) (deleted|removed|cleared)",
-				"holo[gram][s] %holograms% (isn't|is not|aren't|are not) (deleted|removed|cleared)");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.CONDITION, SyntaxInfo.builder(CondIsHologramDeleted.class)
+				.addPatterns(
+						"holo[gram][s] %holograms% (is|are) (deleted|removed|cleared)",
+						"holo[gram][s] %holograms% (isn't|is not|aren't|are not) (deleted|removed|cleared)")
+				.build());
 	}
 
 	private Expression<Hologram> holograms;
@@ -39,7 +42,7 @@ public class CondIsHologramDeleted extends Condition {
 
 	@Override
 	public boolean check(Event e) {
-		return holograms.check(e, Hologram::isDisabled, isNegated());
+		return holograms.check(e, Hologram::isDeleted, isNegated());
 	}
 
 	@Override

@@ -1,18 +1,18 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.*;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.SkriptHolo;
-import me.blueyescat.skriptholo.util.Utils;
+import me.blueyescat.skriptholo.hologram.Hologram;
+import me.blueyescat.skriptholo.hologram.HologramManager;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,13 +23,16 @@ import java.util.List;
 @Examples({"delete the following holograms of targeted entity",
 		"set {_holograms::*} to all holograms that follows the player"})
 @Since("1.0.0")
-@RequiredPlugins("ProtocolLib")
 public class ExprEntityFollowingHolograms extends SimpleExpression<Hologram> {
 
-	static {
-		Skript.registerExpression(ExprEntityFollowingHolograms.class, Hologram.class, ExpressionType.SIMPLE,
-				"[all] [the] following holo[gram]s of %entities%",
-				"[all] [the] holo[gram]s (following|that follows) %entities%");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder(ExprEntityFollowingHolograms.class, Hologram.class)
+				.priority(SyntaxInfo.SIMPLE)
+				.addPatterns(
+						"[all] [the] following holo[gram]s of %entities%",
+						"[all] [the] holo[gram]s (following|that follows) %entities%")
+				.build());
 	}
 
 	private Expression<Entity> entities;
@@ -37,23 +40,15 @@ public class ExprEntityFollowingHolograms extends SimpleExpression<Hologram> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed, ParseResult parseResult) {
-		if (!Utils.hasPlugin("ProtocolLib")) {
-			Skript.error("The following hologram feature requires ProtocolLib");
-			return false;
-		}
 		entities = (Expression<Entity>) exprs[0];
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected Hologram[] get(Event e) {
 		List<Hologram> holograms = new ArrayList<>();
-		for (Entity entity : entities.getArray(e)) {
-			List<Hologram> holoList = SkriptHolo.followingHologramsEntities.get(entity);
-			if (holoList != null)
-				holograms.addAll(holoList);
-		}
+		for (Entity entity : entities.getArray(e))
+			holograms.addAll(HologramManager.getFollowers(entity));
 		return holograms.toArray(new Hologram[0]);
 	}
 

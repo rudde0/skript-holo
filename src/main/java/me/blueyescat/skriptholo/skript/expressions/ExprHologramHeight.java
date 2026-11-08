@@ -1,18 +1,18 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
 import ch.njol.skript.doc.Since;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +23,14 @@ import java.util.List;
 @Since("1.0.0")
 public class ExprHologramHeight extends SimpleExpression<Number> {
 
-	static {
-		Skript.registerExpression(ExprHologramHeight.class, Number.class, ExpressionType.SIMPLE,
-				"[the] [physical] height[s] of [holo[gram][s]] %holograms%",
-				"%holograms%'[s] [physical] height[s]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder(ExprHologramHeight.class, Number.class)
+				.priority(SyntaxInfo.SIMPLE)
+				.addPatterns(
+						"[the] [physical] height[s] of [holo[gram][s]] %holograms%",
+						"%holograms%'[s] [physical] height[s]")
+				.build());
 	}
 
 	private Expression<Hologram> holograms;
@@ -42,7 +46,7 @@ public class ExprHologramHeight extends SimpleExpression<Number> {
 	protected Number[] get(Event e) {
 		List<Number> heights = new ArrayList<>();
 		for (Hologram holo : holograms.getArray(e))
-			heights.add(holo.getPage(0).getHeight());
+			heights.add(holo.getHeight());
 		return heights.toArray(new Number[0]);
 	}
 

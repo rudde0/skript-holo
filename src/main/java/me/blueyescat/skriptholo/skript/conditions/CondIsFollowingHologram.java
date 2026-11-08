@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.conditions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
@@ -9,10 +8,11 @@ import ch.njol.skript.lang.Condition;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.util.Utils;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Is Following Hologram")
 @Description("Checks whether the given hologram is a following hologram.")
@@ -20,10 +20,12 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class CondIsFollowingHologram extends Condition {
 
-	static {
-		Skript.registerCondition(CondIsFollowingHologram.class,
-				"[holo[gram][s]] %holograms% (is|are) [a] following [holo[gram][s]]",
-				"[holo[gram][s]] %holograms% (isn't|is not|aren't|are not) [a] following [holo[gram][s]]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.CONDITION, SyntaxInfo.builder(CondIsFollowingHologram.class)
+				.addPatterns(
+						"[holo[gram][s]] %holograms% (is|are) [a] following [holo[gram][s]]",
+						"[holo[gram][s]] %holograms% (isn't|is not|aren't|are not) [a] following [holo[gram][s]]")
+				.build());
 	}
 
 	private Expression<Hologram> holograms;
@@ -38,7 +40,7 @@ public class CondIsFollowingHologram extends Condition {
 
 	@Override
 	public boolean check(Event e) {
-		return holograms.check(e, Utils::isFollowingHologram, isNegated());
+		return holograms.check(e, Hologram::isFollowing, isNegated());
 	}
 
 	@Override

@@ -1,22 +1,21 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.classes.Changer.ChangeMode;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
 import ch.njol.skript.doc.Since;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.skript.effects.EffCreateHologram;
-import me.blueyescat.skriptholo.util.Utils;
+import me.blueyescat.skriptholo.hologram.Hologram;
+import me.blueyescat.skriptholo.hologram.HologramManager;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Last Created Hologram")
 @Description({"Holds the hologram that was created most recently with the `Create Hologram` effect.",
@@ -26,9 +25,12 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class ExprLastCreatedHologram extends SimpleExpression<Hologram> {
 
-	static {
-		Skript.registerExpression(ExprLastCreatedHologram.class, Hologram.class, ExpressionType.SIMPLE,
-				"[the] [last[ly]] [(created|spawned)] holo[gram]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder(ExprLastCreatedHologram.class, Hologram.class)
+				.priority(SyntaxInfo.SIMPLE)
+				.addPattern("[the] [last[ly]] [(created|spawned)] holo[gram]")
+				.build());
 	}
 
 	@Override
@@ -38,7 +40,8 @@ public class ExprLastCreatedHologram extends SimpleExpression<Hologram> {
 
 	@Override
 	protected Hologram[] get(Event e) {
-		return CollectionUtils.array(EffCreateHologram.lastCreated);
+		Hologram holo = HologramManager.getLastCreated();
+		return holo == null ? new Hologram[0] : new Hologram[] {holo};
 	}
 
 	@Override
@@ -50,7 +53,9 @@ public class ExprLastCreatedHologram extends SimpleExpression<Hologram> {
 
 	@Override
 	public void change(Event e, @Nullable Object[] delta, ChangeMode mode) {
-		Utils.deleteHologram(EffCreateHologram.lastCreated);
+		Hologram holo = HologramManager.getLastCreated();
+		if (holo != null)
+			holo.delete();
 	}
 
 	@Override

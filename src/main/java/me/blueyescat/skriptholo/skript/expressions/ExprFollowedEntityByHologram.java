@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
@@ -10,15 +9,15 @@ import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.SkriptHolo;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Name("Followed Entity of Hologram")
 @Description("Returns the followed entity of a hologram. " +
@@ -28,10 +27,14 @@ import java.util.Map;
 @Since("1.0.0")
 public class ExprFollowedEntityByHologram extends SimpleExpression<Entity> {
 
-	static {
-		Skript.registerExpression(ExprFollowedEntityByHologram.class, Entity.class, ExpressionType.SIMPLE,
-				"[the] followed entit(y|ies) (of|by) [holo[gram][s]] %holograms%",
-				"[the] entit(y|ies) followed by [holo[gram][s]] %holograms%");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder(ExprFollowedEntityByHologram.class, Entity.class)
+				.priority(SyntaxInfo.SIMPLE)
+				.addPatterns(
+						"[the] followed entit(y|ies) (of|by) [holo[gram][s]] %holograms%",
+						"[the] entit(y|ies) followed by [holo[gram][s]] %holograms%")
+				.build());
 	}
 
 	private Expression<Hologram> holograms;
@@ -43,18 +46,13 @@ public class ExprFollowedEntityByHologram extends SimpleExpression<Entity> {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected Entity[] get(Event e) {
 		List<Entity> entities = new ArrayList<>();
 		for (Hologram holo : holograms.getArray(e)) {
-			for (Object o : SkriptHolo.followingHologramsEntities.entrySet()) {
-				Map.Entry entry = (Map.Entry) o;
-				for (Hologram holo2 : ((List<Hologram>) entry.getValue())) {
-					if (holo2.equals(holo))
-						entities.add((Entity) entry.getKey());
-				}
-			}
+			Entity entity = holo.getFollowedEntity();
+			if (entity != null)
+				entities.add(entity);
 		}
 		return entities.toArray(new Entity[0]);
 	}

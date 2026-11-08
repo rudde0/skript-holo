@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.effects;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
@@ -9,10 +8,11 @@ import ch.njol.skript.lang.Effect;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.util.Utils;
+import me.blueyescat.skriptholo.hologram.Hologram;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Delete Hologram")
 @Description({"Deletes a hologram. The hologram type has the delete changer already, but this effect exists for variables. " +
@@ -25,9 +25,10 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class EffDeleteHologram extends Effect {
 
-	static {
-		Skript.registerEffect(EffDeleteHologram.class,
-				"(delete|remove|clear) holo[gram][s] %holograms%");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EFFECT, SyntaxInfo.builder(EffDeleteHologram.class)
+				.addPattern("(delete|remove|clear) holo[gram][s] %holograms%")
+				.build());
 	}
 
 	private Expression<Hologram> holograms;
@@ -41,7 +42,8 @@ public class EffDeleteHologram extends Effect {
 
 	@Override
 	protected void execute(Event e) {
-		Utils.deleteHologram(holograms.getArray(e));
+		for (Hologram holo : holograms.getArray(e))
+			holo.delete();
 	}
 
 	@Override

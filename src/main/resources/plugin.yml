@@ -1,12 +1,11 @@
 name: skript-holo
-description: A properly made Skript addon for HolographicDisplays
-version: 1.0.4-dh
+description: A Skript addon for client side holograms made of display entities
+version: '@version@'
 
 author: Blueyescat
 website: https://github.com/Blueyescat/skript-holo
 
-depend: [Skript, DecentHolograms]
-softdepend: [ProtocolLib]
+depend: [Skript, packetevents]
 
 main: me.blueyescat.skriptholo.SkriptHolo
-api-version: 1.13
+api-version: '1.21'

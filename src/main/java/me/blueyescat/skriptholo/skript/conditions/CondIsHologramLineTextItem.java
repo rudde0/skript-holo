@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.conditions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
@@ -9,10 +8,11 @@ import ch.njol.skript.lang.Condition;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
-import eu.decentsoftware.holograms.api.holograms.HologramLine;
-import eu.decentsoftware.holograms.api.holograms.enums.HologramLineType;
+import me.blueyescat.skriptholo.hologram.HologramLine;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 @Name("Is Text/Item Line")
 @Description("Checks whether the given hologram line is a text line or an item line. " +
@@ -23,10 +23,12 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class CondIsHologramLineTextItem extends Condition {
 
-	static {
-		Skript.registerCondition(CondIsHologramLineTextItem.class,
-				"[holo[gram] line[s]] %hologramlines% (is|are) [a[n]] ((text|string)|1¦item) line[s]",
-				"[holo[gram] line[s]] %hologramlines% (isn't|is not|aren't|are not) [a[n]] ((text|string)|1¦item) line[s]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.CONDITION, SyntaxInfo.builder(CondIsHologramLineTextItem.class)
+				.addPatterns(
+						"[holo[gram] line[s]] %hologramlines% (is|are) [a[n]] ((text|string)|1¦item) line[s]",
+						"[holo[gram] line[s]] %hologramlines% (isn't|is not|aren't|are not) [a[n]] ((text|string)|1¦item) line[s]")
+				.build());
 	}
 
 	private Expression<HologramLine> lines;
@@ -44,9 +46,9 @@ public class CondIsHologramLineTextItem extends Condition {
 	@Override
 	public boolean check(Event e) {
 		if (isText)
-			return lines.check(e, line -> line.getType() == HologramLineType.TEXT, isNegated());
+			return lines.check(e, HologramLine::isText, isNegated());
 		else
-			return lines.check(e, line -> line.getType() == HologramLineType.ICON, isNegated());
+			return lines.check(e, HologramLine::isItem, isNegated());
 	}
 
 	@Override

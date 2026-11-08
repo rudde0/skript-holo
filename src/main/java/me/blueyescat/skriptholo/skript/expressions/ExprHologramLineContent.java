@@ -1,6 +1,5 @@
 package me.blueyescat.skriptholo.skript.expressions;
 
-import ch.njol.skript.Skript;
 import ch.njol.skript.aliases.ItemType;
 import ch.njol.skript.classes.Changer.ChangeMode;
 import ch.njol.skript.doc.Description;
@@ -8,18 +7,20 @@ import ch.njol.skript.doc.Examples;
 import ch.njol.skript.doc.Name;
 import ch.njol.skript.doc.Since;
 import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.ExpressionType;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.util.SimpleExpression;
+import ch.njol.skript.expressions.base.PropertyExpression;
 import org.skriptlang.skript.lang.converter.Converters;
 import ch.njol.skript.util.Utils;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
-import eu.decentsoftware.holograms.api.holograms.HologramLine;
-import eu.decentsoftware.holograms.api.holograms.enums.HologramLineType;
+import me.blueyescat.skriptholo.hologram.HologramLine;
+import org.bukkit.inventory.ItemStack;
 import me.blueyescat.skriptholo.skript.Types;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -36,10 +37,14 @@ import java.util.List;
 @SuppressWarnings("unchecked")
 public class ExprHologramLineContent<T> extends SimpleExpression<T> {
 
-	static {
-		Skript.registerExpression(ExprHologramLineContent.class, Object.class, ExpressionType.PROPERTY,
-				"[the] (content|1¦(text|string)|2¦item)[s] (of|in) [holo[gram] line[s]] %hologramlines%",
-				"%hologramlines%'[s] (content|1¦(text|string)|2¦item)[s]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EXPRESSION, SyntaxInfo.Expression
+				.builder((Class<ExprHologramLineContent<Object>>) (Class<?>) ExprHologramLineContent.class, Object.class)
+				.priority(PropertyExpression.DEFAULT_PRIORITY)
+				.addPatterns(
+						"[the] (content|1¦(text|string)|2¦item)[s] (of|in) [holo[gram] line[s]] %hologramlines%",
+						"%hologramlines%'[s] (content|1¦(text|string)|2¦item)[s]")
+				.build());
 	}
 
 	private final ExprHologramLineContent<?> source;
@@ -82,12 +87,13 @@ public class ExprHologramLineContent<T> extends SimpleExpression<T> {
 	protected T[] get(Event e) {
 		List<Object> contents = new ArrayList<>();
 		for (HologramLine line : lines.getArray(e)) {
-			if (line.getType() == HologramLineType.TEXT) {
+			if (line.isText()) {
 				if (type == 0 || type == 1)
 					contents.add(line.getText());
-			} else if (line.getType() == HologramLineType.ICON) {
-				if (type == 0 || type == 2)
-					contents.add(new ItemType(line.getItem().getMaterial()));
+			} else if (type == 0 || type == 2) {
+				ItemStack item = line.getItem();
+				if (item != null)
+					contents.add(new ItemType(item));
 			}
 		}
 		try {
@@ -106,7 +112,7 @@ public class ExprHologramLineContent<T> extends SimpleExpression<T> {
 
 	@Override
 	public void change(Event e, @Nullable Object[] delta, ChangeMode mode) {
-		Types.hologramLineChanger.change(lines.getArray(e), delta, mode);
+		Types.HOLOGRAM_LINE_CHANGER.change(lines.getArray(e), delta, mode);
 	}
 
 	@Override

@@ -1,24 +1,16 @@
 package me.blueyescat.skriptholo;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.SkriptAddon;
-import ch.njol.skript.util.Direction;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
+import com.github.retrooper.packetevents.PacketEvents;
+import me.blueyescat.skriptholo.hologram.HologramManager;
+import me.blueyescat.skriptholo.skript.SkriptHoloModule;
 import me.blueyescat.skriptholo.util.Metrics;
-import org.bukkit.entity.Entity;
-import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.skriptlang.skript.addon.SkriptAddon;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+public class SkriptHolo extends JavaPlugin {
 
-public class SkriptHolo extends JavaPlugin implements Listener {
-
-	public static boolean startedFollowingHologramTasks = false;
-	public static Map<Integer, Map<Hologram, Direction[]>> followingHolograms = new HashMap<>();
-	public static Map<Entity, List<Hologram>> followingHologramsEntities = new ConcurrentHashMap<>();
-	public static Set<Hologram> followingHologramsList = new HashSet<>();
 	private static SkriptHolo instance;
 	private static SkriptAddon addonInstance;
 
@@ -36,21 +28,35 @@ public class SkriptHolo extends JavaPlugin implements Listener {
 			getLogger().severe("skript-holo can't be loaded when the server is already loaded! Plugin is disabled.");
 			return;
 		}
-
-		try {
-			addonInstance = Skript.registerAddon(this).setLanguageFileDirectory("lang");
-			addonInstance.loadClasses("me.blueyescat.skriptholo", "skript");
-		} catch (IOException e) {
-			e.printStackTrace();
+		if (PacketEvents.getAPI() == null || !PacketEvents.getAPI().isLoaded()) {
+			getServer().getPluginManager().disablePlugin(this);
+			getLogger().severe("skript-holo needs PacketEvents to be installed and enabled! Plugin is disabled.");
+			return;
 		}
 
-		Metrics metrics = new Metrics(getInstance());
-		metrics.addCustomChart(new Metrics.SimplePie("skript_version", () ->
-				Skript.getInstance().getDescription().getVersion()));
-		metrics.addCustomChart(new Metrics.SimplePie("decentholograms_version", () ->
-				getServer().getPluginManager().getPlugin("DecentHolograms").getDescription().getVersion()));
-		getLogger().info("Started metrics!");
+		HologramManager.enable(this);
+
+		addonInstance = Skript.instance().registerAddon(SkriptHolo.class, "skript-holo");
+		addonInstance.localizer().setSourceDirectories("lang", getDataFolder().getAbsolutePath() + "/lang");
+		addonInstance.loadModules(new SkriptHoloModule());
+
+		startMetrics();
 		getLogger().info("Finished loading!");
+	}
+
+	@Override
+	public void onDisable() {
+		HologramManager.disable();
+	}
+
+	private void startMetrics() {
+		Metrics metrics = new Metrics(this);
+		metrics.addCustomChart(new Metrics.SimplePie("skript_version", () ->
+				Skript.getVersion().toString()));
+		metrics.addCustomChart(new Metrics.SimplePie("packetevents_version", () -> {
+			Plugin packetEvents = getServer().getPluginManager().getPlugin("packetevents");
+			return packetEvents == null ? "unknown" : packetEvents.getPluginMeta().getVersion();
+		}));
 	}
 
 	public static SkriptAddon getAddonInstance() {

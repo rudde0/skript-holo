@@ -1,7 +1,6 @@
 package me.blueyescat.skriptholo.skript.effects;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.aliases.ItemType;
 import ch.njol.skript.classes.Changer.ChangeMode;
 import ch.njol.skript.doc.Description;
 import ch.njol.skript.doc.Examples;
@@ -14,20 +13,25 @@ import ch.njol.skript.lang.Variable;
 import ch.njol.skript.util.Direction;
 import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
-import eu.decentsoftware.holograms.api.DHAPI;
-import eu.decentsoftware.holograms.api.holograms.Hologram;
-import me.blueyescat.skriptholo.FollowingHologramListeners;
+import me.blueyescat.skriptholo.hologram.Hologram;
+import me.blueyescat.skriptholo.hologram.HologramManager;
 import me.blueyescat.skriptholo.util.Utils;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Event;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.skriptlang.skript.registration.SyntaxInfo;
+import org.skriptlang.skript.registration.SyntaxRegistry;
+
+import java.util.Collections;
+import java.util.List;
 
 @Name("Create Hologram")
 @Description({"Creates a new hologram.",
 		"",
-		"Besides the `store in %variable%`, the `Last Created Hologram` expression can be used to get the created hologram."})
+		"Besides the `store in %variable%`, the `Last Created Hologram` expression can be used to get the created hologram.",
+		"A hologram that follows an entity is deleted when the entity dies or is removed, " +
+		"and keeps following it when the entity is unloaded and loaded again with its chunk."})
 @Examples({"create a new hologram with line \"test\" and store in {test}",
 		"create new holo with lines \"line 1\", \"line 2\" and \"line 3\"",
 		"create new hologram with line \"test\" that follows player offset by direction 2.3 meters above",
@@ -37,44 +41,45 @@ import org.jetbrains.annotations.Nullable;
 @Since("1.0.0")
 public class EffCreateHologram extends Effect {
 
-	@Nullable
-	public static Hologram lastCreated = null;
-
-	static {
-		Skript.registerEffect(EffCreateHologram.class,
-				"(create|spawn) [a] [new] holo[gram] [with [((1¦click|2¦touch|3¦interact)[-]able|3¦interactive)] line[s] %-strings/itemtypes%] " +
-						"[%direction% %location%] [and store [it] in [[the] variable] %-objects%]",
-				"(create|spawn) [a] [new] holo[gram] [with [((1¦click|2¦touch|3¦interact)[-]able|3¦interactive)] line[s] %-strings/itemtypes%] " +
-						"that follows %entity% [[with] offset [(of|by|in|to)] [[the] direction] %-directions%] [and store [it] in [[the] variable] %-objects%]");
+	public static void register(SyntaxRegistry registry) {
+		registry.register(SyntaxRegistry.EFFECT, SyntaxInfo.builder(EffCreateHologram.class)
+				.addPatterns(
+						"(create|spawn) [a] [new] holo[gram] [with [((1¦click|2¦touch|3¦interact)[-]able|3¦interactive)] line[s] %-strings/itemtypes%] " +
+								"[%direction% %location%] [and store [it] in [[the] variable] %-objects%]",
+						"(create|spawn) [a] [new] holo[gram] [with [((1¦click|2¦touch|3¦interact)[-]able|3¦interactive)] line[s] %-strings/itemtypes%] " +
+								"that follows %entity% [[with] offset [(of|by|in|to)] [[the] direction] %-directions%] [and store [it] in [[the] variable] %-objects%]")
+				.build());
 	}
 
+	@Nullable
 	private Expression<?> lines;
 	private Expression<Location> location;
 	private Expression<Entity> entity;
+	@Nullable
 	private Expression<Direction> offset;
+	@Nullable
 	private Variable<?> variable;
-	private boolean isFollowing, clickable, touchable;
+	private boolean isFollowing, interactive;
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed, ParseResult parseResult) {
-		clickable = (parseResult.mark & 1) == 1;
-		touchable = (parseResult.mark & 2) == 2;
+		interactive = parseResult.mark != 0;
 		lines = exprs[0];
 		if (matchedPattern == 0) {
-			location = Direction.combine((Expression<Direction>) exprs[1], (Expression<Location>) exprs[2]);
-		} else {
-			if (!Utils.hasPlugin("ProtocolLib")) {
-				Skript.error("The following hologram feature requires ProtocolLib");
+			if (exprs[2] == null) {
+				Skript.error("A location is required to create a hologram");
 				return false;
 			}
+			location = Direction.combine((Expression<Direction>) exprs[1], (Expression<Location>) exprs[2]);
+		} else {
 			isFollowing = true;
 			entity = (Expression<Entity>) exprs[1];
 			offset = (Expression<Direction>) exprs[2];
 		}
 		if (exprs[3] != null) {
-			if (exprs[3] instanceof Variable) {
-				variable = (Variable<?>) exprs[3];
+			if (exprs[3] instanceof Variable<?> var) {
+				variable = var;
 			} else {
 				Skript.error(exprs[3] + " is not a variable");
 				return false;
@@ -85,73 +90,45 @@ public class EffCreateHologram extends Effect {
 
 	@Override
 	protected void execute(Event e) {
-		Location location = null;
-		Entity entity = null;
-		Direction[] offset = null;
-		Object[] lines = null;
-		if (this.lines != null) {
-			lines = this.lines.getArray(e);
-			if (lines.length == 0)
+		List<Object> contents = Collections.emptyList();
+		if (lines != null) {
+			Object[] values = lines.getArray(e);
+			if (values.length == 0)
 				return;
+			contents = Utils.toLineContents(values);
 		}
-		if (!isFollowing) {
-			location = this.location.getSingle(e);
-			if (location == null)
-				return;
-		} else if (this.entity != null) {
-			entity = this.entity.getSingle(e);
+
+		Hologram holo;
+		if (isFollowing) {
+			Entity entity = this.entity.getSingle(e);
 			if (entity == null)
 				return;
+			Direction[] offset = null;
 			if (this.offset != null) {
 				offset = this.offset.getArray(e);
 				if (offset.length == 0)
 					return;
-				location = Utils.offsetLocation(entity.getLocation(), offset);
-			} else {
-				location = entity.getLocation();
 			}
+			holo = HologramManager.create(entity, offset, contents, interactive);
+		} else {
+			Location location = this.location.getSingle(e);
+			if (location == null || location.getWorld() == null)
+				return;
+			holo = HologramManager.create(location, contents, interactive);
 		}
 
-		Hologram holo = DHAPI.createHologram(String.valueOf(System.nanoTime()), location);
-		lastCreated = holo;
-		if (lines != null) {
-			for (Object line : lines) {
-				if (line instanceof String) {
-					DHAPI.addHologramLine(holo, (String) line);
-				} else if (line instanceof ItemType) {
-					for (ItemStack item : ((ItemType) line).getItem().getAll()) {
-						DHAPI.addHologramLine(holo, item);
-					}
-				}
-			}
-		}
-		if (isFollowing) {
-			assert entity != null;
-			Utils.makeHologramStartFollowing(holo, entity, offset);
-			FollowingHologramListeners.start();
-		}
 		if (variable != null)
-			variable.change(e, CollectionUtils.array(holo), (variable.isList() ? ChangeMode.ADD : ChangeMode.SET));
+			variable.change(e, CollectionUtils.array(holo), variable.isList() ? ChangeMode.ADD : ChangeMode.SET);
 	}
 
 	@Override
 	public String toString(@Nullable Event e, boolean debug) {
-		String interact = "";
-		if (clickable && touchable)
-			interact = "interactive ";
-		else if (clickable)
-			interact = "click-able ";
-		else if (touchable)
-			interact = "touchable ";
+		String lines = this.lines == null ? "" : " with " + (interactive ? "interactive " : "") + "lines " + this.lines.toString(e, debug);
+		String store = variable == null ? "" : " and store it in " + variable.toString(e, debug);
 		if (!isFollowing)
-			return "create a hologram" + (lines != null ? (" with " + interact + "lines " + lines.toString(e, debug)) : "") +
-					" " + location.toString(e, debug) + (variable != null ? " and store it in " +
-					variable.toString(e, debug) : "");
-		else
-			return "create a hologram" + (lines != null ? (" with " + interact + "lines " + lines.toString(e, debug)) : "") +
-					" that follows " + entity.toString(e, debug) + (offset != null ? " with offset " +
-					offset.toString(e, debug) : "") + (variable != null ? " and store it in "
-					+ variable.toString(e, debug) : "");
+			return "create a hologram" + lines + " " + location.toString(e, debug) + store;
+		return "create a hologram" + lines + " that follows " + entity.toString(e, debug) +
+				(offset != null ? " with offset " + offset.toString(e, debug) : "") + store;
 	}
 
 }
